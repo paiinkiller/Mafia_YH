@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>마피아 게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Black+Han+Sans&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1020; --bg2:#121a33; --card:#18223f; --card2:#1f2b50; --line:#2a3762;
+  --text:#e8ecf8; --muted:#8f9bc0; --accent:#e5484d; --accent2:#ff7a7f; --cit:#4f8cff; --ok:#3ecf8e; --gold:#f5c451;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+body.day{
+  --bg:#f3ece0; --bg2:#ebe1d0; --card:#fffaf2; --card2:#f6eddc; --line:#e0d2b8;
+  --text:#2b2216; --muted:#86745a; --shadow:0 8px 24px rgba(90,60,20,.12);
+}
+body.vote{
+  --bg:#1a1014; --bg2:#24151b; --card:#2e1b23; --card2:#3a222c; --line:#4f2e3b;
+  --text:#f6e9ee; --muted:#b994a3;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:radial-gradient(1200px 600px at 50% -10%,var(--bg2),var(--bg));color:var(--text);
+  font-family:'Noto Sans KR',system-ui,sans-serif;transition:background .6s,color .6s;min-height:100vh}
+button{font:inherit;cursor:pointer;border:none;border-radius:12px;padding:10px 16px;font-weight:700;
+  background:var(--card2);color:var(--text);transition:transform .08s,filter .15s,opacity .15s}
+button:hover:not(:disabled){filter:brightness(1.12)}
+button:active:not(:disabled){transform:scale(.97)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);color:#fff}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+input,select{font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 14px;outline:none;min-width:0}
+input:focus,select:focus{border-color:var(--accent)}
+.hidden{display:none!important}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 16px 40px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.logo{font-family:'Black Han Sans',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);display:flex;align-items:center;gap:8px}
+.logo small{font-family:'Noto Sans KR';font-size:12px;color:var(--muted);letter-spacing:0;font-weight:500}
+.spacer{flex:1}
+.chip{font-size:13px;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#777}
+.dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.notice{padding:12px 14px;border-radius:12px;background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.35);font-size:14px;margin-bottom:14px}
+
+/* home */
+.hero{text-align:center;padding:26px 0 18px}
+.hero h1{font-family:'Black Han Sans',sans-serif;font-size:64px;margin:0;color:var(--accent);text-shadow:0 6px 30px rgba(229,72,77,.35)}
+.hero p{color:var(--muted);margin:6px 0 0}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:760px;margin:0 auto}
+.home-grid .full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;color:var(--muted);font-weight:500}
+.row{display:flex;gap:8px;align-items:center}
+.row > input{flex:1}
+.rooms{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.room-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.room-item b{font-family:monospace;font-size:16px;letter-spacing:2px}
+h3{margin:0 0 10px;font-size:16px}
+
+/* room */
+.room-grid{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+.banner{display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:18px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);margin-bottom:14px}
+.banner .icon{font-size:42px;line-height:1}
+.banner h2{margin:0;font-size:22px}
+.banner p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.timer{font-family:'Black Han Sans',sans-serif;font-size:38px;min-width:72px;text-align:right;font-variant-numeric:tabular-nums}
+.timer.low{color:var(--accent)}
+.code-big{font-family:'Black Han Sans',sans-serif;font-size:46px;letter-spacing:8px;color:var(--gold)}
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.pl{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px 12px;border-radius:16px;
+  background:var(--card2);border:2px solid transparent;text-align:center;transition:border-color .15s,transform .1s,opacity .3s;user-select:none}
+.pl.clickable{cursor:pointer}
+.pl.clickable:hover{border-color:var(--line);transform:translateY(-2px)}
+.pl.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(229,72,77,.18)}
+.pl.dead{opacity:.42;filter:grayscale(1)}
+.pl.off .av::after{content:'';position:absolute;right:-2px;bottom:-2px;width:12px;height:12px;border-radius:50%;background:#777;border:2px solid var(--card2)}
+.av{position:relative;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:20px;color:#fff}
+.pl .nm{font-weight:700;font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tags{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;min-height:18px}
+.tag{font-size:11px;padding:2px 7px;border-radius:999px;background:var(--bg);color:var(--muted);font-weight:700}
+.tag.m{background:var(--accent);color:#fff}
+.tag.c{background:var(--cit);color:#fff}
+.tag.me{background:var(--gold);color:#2b2216}
+.badge{position:absolute;top:6px;right:6px;min-width:24px;height:24px;border-radius:12px;background:var(--accent);color:#fff;font-weight:900;font-size:13px;display:grid;place-items:center;padding:0 6px}
+.crown{position:absolute;top:6px;left:8px;font-size:14px}
+.skull{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;pointer-events:none}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.hint{font-size:14px;color:var(--muted)}
+
+.role{margin-bottom:14px;border-radius:18px;padding:16px 18px;cursor:pointer;border:1px dashed var(--line);background:var(--card);display:flex;align-items:center;gap:14px;user-select:none}
+.role .big{font-family:'Black Han Sans',sans-serif;font-size:30px}
+.role.m{border:1px solid var(--accent);background:linear-gradient(135deg,rgba(229,72,77,.22),var(--card))}
+.role.m .big{color:var(--accent2)}
+.role.c{border:1px solid var(--cit);background:linear-gradient(135deg,rgba(79,140,255,.2),var(--card))}
+.role.c .big{color:var(--cit)}
+.role .desc{font-size:13px;color:var(--muted)}
+
+/* chat */
+.chat{display:flex;flex-direction:column;height:min(620px,calc(100vh - 140px));padding:0;overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border-radius:0;background:transparent;color:var(--muted);padding:12px;position:relative}
+.tabs button.on{color:var(--text);box-shadow:inset 0 -2px 0 var(--accent)}
+.tabs button .ud{position:absolute;top:10px;margin-left:4px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.feed{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg{font-size:14px;line-height:1.45;word-break:break-word}
+.msg .who{font-weight:700;margin-right:6px}
+.msg.sys{align-self:center;text-align:center;font-size:13px;color:var(--muted);background:var(--bg);border:1px solid var(--line);padding:6px 12px;border-radius:999px;max-width:95%}
+.msg.maf .who{color:var(--accent2)}
+.composer{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.composer input{flex:1}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.end-banner{text-align:center;padding:26px 18px}
+.end-banner .big{font-family:'Black Han Sans',sans-serif;font-size:44px}
+.overlay{position:fixed;inset:0;background:rgba(5,8,18,.7);display:grid;place-items:center;z-index:20;padding:20px}
+.overlay .card{max-width:380px;text-align:center}
+.help{font-size:13px;color:var(--muted);line-height:1.6}
+.help b{color:var(--text)}
+@media (max-width:820px){
+  .room-grid{grid-template-columns:1fr}
+  .home-grid{grid-template-columns:1fr}
+  .chat{height:420px}
+  .hero h1{font-size:52px}
+}
+</style>
+<style>
+.invite{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.qr{background:#fff;padding:8px;border-radius:12px;width:132px;height:132px;display:grid;place-items:center}
+.qr img,.qr canvas{width:116px!important;height:116px!important}
+.link-box{font-family:monospace;font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;word-break:break-all;color:var(--muted)}
+.invited{border:1px solid var(--gold);background:linear-gradient(135deg,rgba(245,196,81,.14),var(--card))}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🔪 마피아 <small>실시간 멀티플레이</small></div>
+    <div class="spacer"></div>
+    <span class="chip hidden" id="roomChip">방 <b id="roomChipCode"></b></span>
+    <span class="chip"><span class="dot" id="connDot"></span><span id="connText">대기</span></span>
+  </header>
+
+  <!-- HOME -->
+  <section id="home">
+    <div class="hero">
+      <h1>MAFIA</h1>
+      <p>밤에는 마피아가 움직이고, 낮에는 모두가 의심합니다.</p>
+    </div>
+    <div id="homeNotice" class="notice hidden" style="max-width:760px;margin:0 auto 14px"></div>
+    <div class="home-grid">
+      <div class="card full">
+        <div class="field">
+          <label for="nameIn">닉네임</label>
+          <input id="nameIn" maxlength="10" placeholder="최대 10자" autocomplete="off">
+        </div>
+      </div>
+      <div class="card full invited hidden" id="inviteCard">
+        <h3>초대받은 방 <span id="inviteCode" style="font-family:monospace;letter-spacing:3px;color:var(--gold)"></span></h3>
+        <p class="hint" style="margin:0 0 12px">닉네임을 입력하고 참가를 누르세요.</p>
+        <button class="primary" id="inviteJoin" style="width:100%">참가하기</button>
+      </div>
+      <div class="card">
+        <h3>새 방 만들기</h3>
+        <p class="hint" style="margin:0 0 12px">방장이 되어 친구들을 초대하세요. 방장의 브라우저에서 게임이 진행돼요.</p>
+        <button class="primary" id="createBtn" style="width:100%">방 만들기</button>
+      </div>
+      <div class="card">
+        <h3>코드로 참가</h3>
+        <div class="row">
+          <input id="codeIn" maxlength="4" placeholder="ABCD" style="text-transform:uppercase;letter-spacing:4px;font-weight:700" autocomplete="off">
+          <button id="joinBtn">참가</button>
+        </div>
+      </div>
+      <div class="card full help">
+        <b>규칙</b> — 마피아는 매일 밤 시민 한 명을 제거합니다. 낮에는 모두 토론한 뒤 투표로 한 명을 처형해요.
+        마피아를 모두 찾아내면 <b>시민 승리</b>, 마피아 수가 시민 수와 같아지면 <b>마피아 승리</b>입니다. 최소 4명, 최대 12명.<br>
+        <b>방장은 게임 중 이 창을 닫지 마세요.</b> 방장 브라우저가 게임을 진행합니다. (새로고침은 괜찮아요)
+      </div>
+    </div>
+  </section>
+
+  <!-- ROOM -->
+  <section id="room" class="hidden">
+    <div class="room-grid">
+      <div id="main"></div>
+      <div class="card chat">
+        <div class="tabs" id="tabs">
+          <button data-tab="pub" class="on">전체 대화</button>
+          <button data-tab="maf" class="hidden">마피아 대화<span class="ud hidden" id="mafUnread"></span></button>
+        </div>
+        <div class="feed" id="feed"></div>
+        <form class="composer" id="composer">
+          <input id="chatIn" maxlength="80" placeholder="메시지 입력" autocomplete="off">
+          <button class="primary" id="sendBtn">전송</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="overlay hidden" id="hostGone">
+  <div class="card">
+    <div style="font-size:40px">📡</div>
+    <h3 id="goneTitle">방장과 연결이 끊겼어요</h3>
+    <p class="hint" id="goneText">다시 연결하는 중이에요. 방장이 창을 닫았다면 다시 열어야 이어집니다.</p>
+    <button class="ghost" id="goneLeave">나가기</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+'use strict';
+/* ================= utils ================= */
+const $ = s => document.querySelector(s);
+const MIN_P = 4, MAX_P = 12, NIGHT_MS = 40000, VOTE_MS = 30000;
+const PREFIX = 'mafia-kr-v1-';
+const ss = {
+  get(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} },
+  del(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
+};
+const ls = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+function rnd(n){ return crypto.getRandomValues(new Uint8Array(n)); }
+function rid(n, abc='abcdefghijkmnpqrstuvwxyz23456789'){ let s=''; for(const x of rnd(n)) s+=abc[x%abc.length]; return s; }
+const CTRL_RE=new RegExp('[\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u200b-\\u200f\\u2028-\\u202e\\u2060-\\u206f\\ufeff]','g');
+function cleanText(s, max){ return String(s==null?'':s).replace(CTRL_RE,'').trim().slice(0,max); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=crypto.getRandomValues(new Uint32Array(1))[0]%(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function hue(pid){ let h=0; for(const c of String(pid)) h=(h*31+c.charCodeAt(0))%360; return h; }
+function el(tag, attrs={}, ...kids){
+  const e=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(v==null||v===false) continue;
+    if(k==='class') e.className=v; else if(k==='text') e.textContent=v;
+    else if(k.startsWith('on')) e.addEventListener(k.slice(2),v);
+    else if(k==='style') e.style.cssText=v; else e.setAttribute(k,v===true?'':v);
+  }
+  for(const c of kids.flat()) if(c!=null&&c!==false) e.append(c.nodeType?c:document.createTextNode(String(c)));
+  return e;
+}
+const PID_RE=/^p[a-z0-9]{7}$/;
+let myPid = ss.get('mafia.pid');
+if(!myPid || !PID_RE.test(myPid)){ myPid='p'+rid(7); ss.set('mafia.pid',myPid); }
+let myName = cleanText(ls.get('mafia.name')||'',10);
+
+// Optional: own PeerJS server via ?peerhost=host&peerport=9000&peerpath=/myapp&peersecure=0
+const qs=new URLSearchParams(location.search);
+function peerOpts(){
+  const o={debug:0};
+  if(qs.get('peerhost')){
+    o.host=qs.get('peerhost'); o.port=Number(qs.get('peerport')||443); o.path=qs.get('peerpath')||'/';
+    o.secure=qs.get('peersecure')!=='0';
+  }
+  return o;
+}
+
+/* ================= shared state ================= */
+let peer=null, code=null, isHost=false;
+let conn=null, retryTimer=null, connState='idle', lostAt=0, everConnected=false, notFoundCount=0;
+// host
+let G=null, conns=new Map(), hostTimer=null, chatLog=[], mafLog=[];
+// client view
+let V={}, feed=[], tab='pub', mafUnread=false, roleShown=false, deadline=0, myAct={pi:-1};
+
+function setConn(state,txt){
+  connState=state;
+  $('#connDot').classList.toggle('on',state==='on');
+  $('#connText').textContent=txt||({on:'연결됨',connecting:'연결 중…',idle:'대기',error:'연결 실패'}[state]||state);
+}
+function readName(){
+  const n=cleanText($('#nameIn').value,10);
+  if(!n){ $('#nameIn').focus(); $('#nameIn').placeholder='닉네임을 먼저 입력하세요'; return null; }
+  myName=n; ls.set('mafia.name',n); return n;
+}
+function homeNotice(t){ const n=$('#homeNotice'); n.textContent=t||''; n.classList.toggle('hidden',!t); }
+function inviteLink(){ return location.origin+location.pathname+location.search+'#'+code; }
+
+/* ================= transport ================= */
+// host's own client talks to host logic through this local pseudo-connection
+const localConn={ pid:myPid, local:true, open:true, send(d){ const c=JSON.parse(JSON.stringify(d)); queueMicrotask(()=>onClientData(c)); } };
+function toHost(d){
+  if(isHost){ const c=JSON.parse(JSON.stringify(d)); queueMicrotask(()=>onHostData(localConn,c)); return; }
+  if(conn && conn.open){ try{ conn.send(d); }catch(e){} }
+}
+
+function startHost(c, resume){
+  code=c; isHost=true; cleanupPeer();
+  if(typeof Peer==='undefined'){ homeNotice('네트워크 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인하세요.'); return; }
+  let saved=null; if(resume){ try{ saved=JSON.parse(ss.get('mafia.host.'+c)||'null'); }catch(e){} }
+  G = saved && saved.g ? saved.g : newLobby();
+  chatLog = saved && saved.chat ? saved.chat : []; mafLog = saved && saved.maf ? saved.maf : [];
+  conns=new Map(); conns.set(myPid,localConn);
+  resetClient(); enterRoomUI();
+  localConn.send({t:'hist',pub:chatLog,maf:G.roles[myPid]==='m'?mafLog:[]});
+  setConn('connecting','방 여는 중…');
+  let tries=0;
+  const open=()=>{
+    peer=new Peer(PREFIX+code, peerOpts());
+    peer.on('open',()=>{ setConn('on','방 열림'); ss.set('mafia.room',JSON.stringify({code,host:true})); hostChanged(); });
+    peer.on('connection',onHostConnection);
+    peer.on('disconnected',()=>{ setConn('connecting','재연결 중…'); try{ peer.reconnect(); }catch(e){} });
+    peer.on('error',e=>{
+      if(e.type==='unavailable-id'){
+        // after a reload the old id may linger for a few seconds
+        try{ peer.destroy(); }catch(_){}
+        if(resume && tries++<8){ setConn('connecting','방 다시 여는 중…'); setTimeout(open,2500); }
+        else if(!resume){ code=rid(4,'ABCDEFGHJKLMNPQRSTUVWXYZ'); open(); render(true); }
+        else { setConn('error','이 코드는 사용 중'); }
+      } else if(['network','server-error','socket-error','socket-closed'].includes(e.type)){
+        setConn('error','서버 연결 실패');
+      } else if(e.type==='browser-incompatible'){ setConn('error','지원하지 않는 브라우저'); }
+    });
+  };
+  open();
+  clearInterval(hostTimer); hostTimer=setInterval(hostTick,1000);
+  hostTick();
+}
+
+function startClient(c){
+  code=c; isHost=false; cleanupPeer(); resetClient(); enterRoomUI();
+  if(typeof Peer==='undefined'){ homeNotice('네트워크 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인하세요.'); return; }
+  ss.set('mafia.room',JSON.stringify({code,host:false}));
+  setConn('connecting');
+  peer=new Peer(peerOpts());
+  peer.on('open',connectHost);
+  peer.on('disconnected',()=>{ try{ peer.reconnect(); }catch(e){} });
+  peer.on('error',e=>{
+    if(e.type==='peer-unavailable'){
+      notFoundCount++;
+      setConn('error', everConnected?'방장 재연결 대기':'방을 찾을 수 없어요');
+      retryLater(3000);
+    } else if(['network','server-error','socket-error','socket-closed'].includes(e.type)){ setConn('error','서버 연결 실패'); retryLater(4000); }
+    else if(e.type==='browser-incompatible'){ setConn('error','지원하지 않는 브라우저'); }
+  });
+}
+function retryLater(ms){ clearTimeout(retryTimer); retryTimer=setTimeout(()=>{ if(!isHost && code && peer && !peer.destroyed){ if(peer.disconnected){ try{peer.reconnect();}catch(e){} } connectHost(); } },ms); }
+function connectHost(){
+  if(!peer||peer.destroyed||!code) return;
+  if(conn){ try{ conn.close(); }catch(e){} }
+  const c=peer.connect(PREFIX+code,{reliable:true});
+  conn=c;
+  c.on('open',()=>{ if(conn!==c) return; everConnected=true; notFoundCount=0; lostAt=0; setConn('on'); c.send({t:'hello',pid:myPid,name:myName}); render(); });
+  c.on('data',d=>{ if(conn===c) onClientData(d); });
+  c.on('close',()=>{ if(conn!==c) return; conn=null; if(!lostAt) lostAt=Date.now(); setConn('connecting','재연결 중…'); retryLater(1500); render(); });
+  c.on('error',()=>{});
+}
+function cleanupPeer(){
+  clearTimeout(retryTimer); clearInterval(hostTimer);
+  if(conn){ try{ conn.close(); }catch(e){} conn=null; }
+  if(peer){ try{ peer.destroy(); }catch(e){} peer=null; }
+  for(const c of conns.values()) if(!c.local){ try{ c.close(); }catch(e){} }
+  conns=new Map();
+}
+function leaveRoom(){
+  if(isHost) ss.del('mafia.host.'+code);
+  ss.del('mafia.room');
+  cleanupPeer();
+  code=null; isHost=false; G=null; lostAt=0; everConnected=false;
+  resetClient(); setConn('idle');
+  if(location.hash) history.replaceState(null,'',location.pathname+location.search);
+  showScreen('home'); updateInvite(); render();
+}
+
+/* ================= HOST: authoritative game ================= */
+function newLobby(prev){
+  return {id:rid(4), ph:'lobby', pi:(prev?prev.pi+1:1), d:0, endAt:0,
+    pl:prev?prev.pl.map(x=>({p:x.p,n:x.n,a:1})):[{p:myPid,n:myName,a:1}], roles:{}, acts:{},
+    set:prev?prev.set:{m:0,ds:120}, vt:null, nv:0, rd:0, w:null, agree:0};
+}
+function autoMafia(n){ return n<=5?1:n<=8?2:3; }
+function setPhase(ph, ms){ G.ph=ph; G.pi++; G.endAt=ms?Date.now()+ms:0; G.agree=0; G.vt=null; G.nv=0; G.rd=0; G.acts={}; }
+function sysMsg(text){ const m={k:'sys',id:rid(6),text}; chatLog.push(m); if(chatLog.length>150) chatLog.shift(); for(const c of conns.values()) safeSend(c,{t:'msg',m}); }
+function safeSend(c,d){ try{ if(c.local||c.open) c.send(d); }catch(e){} }
+function isAliveMafia(pid){ const x=G.pl.find(y=>y.p===pid); return !!(x&&x.a&&G.roles[pid]==='m'); }
+
+function onHostConnection(c){
+  c.on('data',d=>onHostData(c,d));
+  c.on('close',()=>{ if(c.pid && conns.get(c.pid)===c){ conns.delete(c.pid); hostChanged(); } });
+  c.on('error',()=>{});
+}
+function onHostData(c,d){
+  if(!d||typeof d!=='object'||!G) return;
+  if(d.t==='hello'){
+    const pid=String(d.pid||''); if(!PID_RE.test(pid)) return;
+    const old=conns.get(pid); if(old && old!==c && !old.local){ try{ old.close(); }catch(e){} }
+    c.pid=pid; conns.set(pid,c);
+    const n=cleanText(d.name,10)||'?';
+    let x=G.pl.find(y=>y.p===pid);
+    if(x) x.n=n; else if(G.ph==='lobby' && G.pl.length<MAX_P) G.pl.push({p:pid,n,a:1});
+    safeSend(c,{t:'hist',pub:chatLog,maf:G.roles[pid]==='m'?mafLog:[]});
+    hostChanged(); return;
+  }
+  const pid=c.pid; if(!pid) return;
+  const me=G.pl.find(y=>y.p===pid);
+  if(d.t==='act'){
+    if(!me||!me.a||d.pi!==G.pi) return;
+    const a=G.acts[pid]||(G.acts[pid]={});
+    if(G.ph==='night' && G.roles[pid]==='m' && typeof d.k==='string') a.k=d.k;
+    if(G.ph==='day' && d.r) a.r=1;
+    if(G.ph==='vote' && typeof d.v==='string') a.v=d.v;
+    hostTick(); return;
+  }
+  if(d.t==='chat'){
+    const text=cleanText(d.text,80); if(!text) return;
+    const ok = G.ph==='lobby'||G.ph==='end' ? !!me : (me&&me.a&&(G.ph==='day'||G.ph==='vote'));
+    if(!ok) return;
+    const m={k:'pub',id:rid(6),pid,name:me.n,text}; chatLog.push(m); if(chatLog.length>150) chatLog.shift();
+    for(const cc of conns.values()) safeSend(cc,{t:'msg',m});
+    saveHost(); return;
+  }
+  if(d.t==='mchat'){
+    const text=cleanText(d.text,80); if(!text) return;
+    if(G.ph!=='night'||!isAliveMafia(pid)) return;
+    const m={k:'maf',id:rid(6),pid,name:me.n,text}; mafLog.push(m); if(mafLog.length>100) mafLog.shift();
+    for(const [p,cc] of conns) if(G.roles[p]==='m') safeSend(cc,{t:'msg',m});
+    saveHost(); return;
+  }
+  if(pid===myPid && isHost){ // host-only controls arrive from the local client
+    if(d.t==='start') hostStart();
+    else if(d.t==='skip'){ if(['night','day','vote'].includes(G.ph)){ G.endAt=Date.now(); hostTick(); } }
+    else if(d.t==='lobby'){ G=newLobby(G); mafLog=[]; sysMsg('대기실로 돌아왔어요. 방장이 다음 게임을 시작할 수 있어요.'); hostChanged(); }
+    else if(d.t==='set' && G.ph==='lobby' && ['m','ds'].includes(d.k)){ G.set[d.k]=Number(d.v)||0; hostChanged(); }
+  }
+}
+function checkWin(){
+  const alive=G.pl.filter(x=>x.a);
+  const m=alive.filter(x=>G.roles[x.p]==='m').length, c=alive.length-m;
+  if(m===0){ G.w='c'; setPhase('end'); sysMsg('🎉 마피아를 모두 찾아냈습니다. 시민 승리!'); return true; }
+  if(m>=c){ G.w='m'; setPhase('end'); sysMsg('🔪 마피아가 도시를 장악했습니다. 마피아 승리!'); return true; }
+  return false;
+}
+function hostStart(){
+  if(G.ph!=='lobby') return;
+  G.pl=G.pl.filter(x=>conns.has(x.p));
+  const n=G.pl.length; if(n<MIN_P) return;
+  let mc=G.set.m||autoMafia(n); mc=Math.max(1,Math.min(mc,Math.floor((n-1)/2)));
+  const order=shuffle(G.pl.map(x=>x.p)); G.roles={};
+  order.forEach((p,i)=>G.roles[p]= i<mc?'m':'c');
+  G.pl.forEach(x=>x.a=1); G.id=rid(4); G.d=1; G.w=null; mafLog=[];
+  setPhase('night',NIGHT_MS);
+  sysMsg(`게임 시작! 마피아 ${mc}명이 숨어 있습니다. 첫 번째 밤이 찾아왔어요.`);
+  for(const [p,cc] of conns) safeSend(cc,{t:'hist',pub:chatLog,maf:[]});
+  hostChanged();
+}
+function resolveNight(picks){
+  const tally={}; for(const t of picks) tally[t]=(tally[t]||0)+1;
+  const max=Math.max(0,...Object.values(tally));
+  const top=Object.keys(tally).filter(k=>tally[k]===max);
+  const victim = top.length? top[crypto.getRandomValues(new Uint32Array(1))[0]%top.length] : null;
+  if(victim){ const x=G.pl.find(y=>y.p===victim); x.a=0; sysMsg(`☀️ 아침이 밝았습니다. 밤사이 ${x.n}님이 마피아에게 살해당했습니다.`); }
+  else sysMsg('☀️ 아침이 밝았습니다. 조용한 밤이었어요. 아무도 죽지 않았습니다.');
+  if(!checkWin()) setPhase('day',(G.set.ds||120)*1000);
+}
+function resolveVote(){
+  const vt=G.vt||{}; const skip=vt.x||0;
+  let best=null, max=0, tie=false;
+  for(const [k,v] of Object.entries(vt)){ if(k==='x') continue; if(v>max){max=v;best=k;tie=false;} else if(v===max) tie=true; }
+  if(best && !tie && max>skip){
+    const x=G.pl.find(y=>y.p===best); x.a=0;
+    sysMsg(`⚖️ 투표 결과 ${x.n}님이 ${max}표로 처형되었습니다.`);
+  } else sysMsg(tie?'⚖️ 동률이 나와 아무도 처형되지 않았습니다.':'⚖️ 기권이 많아 아무도 처형되지 않았습니다.');
+  if(!checkWin()){ G.d++; setPhase('night',NIGHT_MS); }
+}
+function hostTick(){
+  if(!isHost||!G) return;
+  const now=Date.now();
+  if(G.ph==='lobby'){
+    G.pl=G.pl.filter(x=>conns.has(x.p));
+    for(const [pid,c] of conns){ if(!G.pl.find(x=>x.p===pid) && G.pl.length<MAX_P && pid===myPid) G.pl.unshift({p:myPid,n:myName,a:1}); }
+  }
+  const alive=G.pl.filter(x=>x.a), acts=G.acts;
+  const isTarget=t=>G.pl.some(y=>y.p===t&&y.a&&G.roles[y.p]!=='m');
+  if(G.ph==='night'){
+    const maf=alive.filter(x=>G.roles[x.p]==='m');
+    const picks=maf.map(x=>acts[x.p]&&acts[x.p].k).filter(isTarget);
+    if(maf.length && picks.length===maf.length && picks.every(t=>t===picks[0])){ if(!G.agree) G.agree=now; } else G.agree=0;
+    if(now>=G.endAt || (G.agree && now-G.agree>=2500)) resolveNight(picks);
+  } else if(G.ph==='day'){
+    G.rd=alive.filter(x=>acts[x.p]&&acts[x.p].r).length;
+    if(now>=G.endAt || G.rd>alive.length/2){ setPhase('vote',VOTE_MS); sysMsg('🗳️ 투표 시간입니다. 마피아로 의심되는 사람을 고르세요.'); }
+  } else if(G.ph==='vote'){
+    const vt={}; let n=0;
+    for(const x of alive){ const v=acts[x.p]&&acts[x.p].v; if(v==='x' || (v!==x.p && G.pl.some(y=>y.p===v&&y.a))){ vt[v]=(vt[v]||0)+1; n++; } }
+    G.vt=vt; G.nv=n;
+    if(n===alive.length){ if(!G.agree) G.agree=now; } else G.agree=0;
+    if(now>=G.endAt || (G.agree && now-G.agree>=1500)) resolveVote();
+  }
+  hostChanged();
+}
+function saveHost(){ ss.set('mafia.host.'+code, JSON.stringify({g:G,chat:chatLog.slice(-60),maf:mafLog.slice(-40)})); }
+function hostChanged(){
+  if(!G) return;
+  saveHost();
+  const online=[...conns.keys()];
+  const spect=online.filter(p=>!G.pl.find(x=>x.p===p)).length;
+  const mc=G.ph==='lobby'?0:Object.values(G.roles).filter(r=>r==='m').length;
+  const st={id:G.id, ph:G.ph, pi:G.pi, d:G.d, rem:G.endAt?Math.max(0,G.endAt-Date.now()):0,
+    pl:G.pl.map(x=>[x.p,x.n,x.a?1:0]), set:G.set, mc, on:online, sp:spect, hp:myPid,
+    vt:G.ph==='vote'?(G.vt||{}):null, nv:G.ph==='vote'?G.nv:0, rd:G.ph==='day'?G.rd:0,
+    w:G.w||null, ro:G.ph==='end'?G.roles:null};
+  for(const [pid,c] of conns){
+    let you=null, picks=null;
+    if(G.ph!=='lobby' && G.roles[pid]){
+      const r=G.roles[pid];
+      you={g:G.id,r};
+      if(r==='m'){
+        you.m=G.pl.filter(y=>G.roles[y.p]==='m'&&y.p!==pid).map(y=>y.p);
+        if(G.ph==='night'){ picks={}; for(const y of G.pl) if(G.roles[y.p]==='m'&&y.a&&G.acts[y.p]&&G.acts[y.p].k) picks[y.p]=G.acts[y.p].k; }
+      }
+    }
+    safeSend(c,{t:'state',st,you,picks,act:G.acts[pid]||null});
+  }
+}
+
+/* ================= CLIENT ================= */
+function resetClient(){ V={}; feed=[]; tab='pub'; mafUnread=false; roleShown=false; deadline=0; myAct={pi:-1}; mainSig=''; feedLen=-1; $('#feed').textContent=''; }
+function onClientData(d){
+  if(!d||typeof d!=='object') return;
+  if(d.t==='state' && d.st){
+    const st=d.st;
+    if(V.you && d.you && V.you.g!==d.you.g) roleShown=false;
+    if(myAct.pi!==st.pi) myAct={pi:st.pi};
+    if(d.act) myAct=Object.assign({pi:st.pi},d.act);
+    const roster=(st.pl||[]).map(([p,n,a])=>({p,n:cleanText(n,10)||'?',a:!!a}));
+    V={st,you:d.you,picks:d.picks||{},roster,me:roster.find(x=>x.p===myPid),online:new Set(st.on||[])};
+    deadline=st.rem?Date.now()+st.rem:0;
+    render();
+  } else if(d.t==='msg' && d.m){
+    if(feed.some(f=>f.id===d.m.id)) return;
+    feed.push(d.m); if(feed.length>300) feed.shift();
+    if(d.m.k==='maf' && tab!=='maf' && d.m.pid!==myPid) mafUnread=true;
+    renderChat();
+  } else if(d.t==='hist'){
+    feed=[...(Array.isArray(d.pub)?d.pub:[]),...(Array.isArray(d.maf)?d.maf:[])];
+    renderChat(true);
+  }
+}
+function act(patch){
+  if(!V.st) return;
+  Object.assign(myAct,patch,{pi:V.st.pi});
+  toHost(Object.assign({t:'act',pi:V.st.pi},patch));
+  render();
+}
+function hostCmd(t,extra){ if(isHost) toHost(Object.assign({t},extra||{})); }
+
+function chatMode(){
+  const st=V.st; if(!st) return {ok:false,why:'연결 중…'};
+  const amM=V.you&&V.you.r==='m';
+  if(tab==='maf'){
+    if(!amM) return {ok:false,why:''};
+    if(!V.me||!V.me.a) return {ok:false,why:'죽은 사람은 말할 수 없어요'};
+    if(st.ph!=='night') return {ok:false,why:'마피아 대화는 밤에만 할 수 있어요'};
+    return {ok:true,why:'마피아끼리만 보이는 메시지'};
+  }
+  if(!V.me) return {ok:false,why:'관전 중에는 말할 수 없어요'};
+  if(st.ph==='lobby'||st.ph==='end') return {ok:true,why:'메시지 입력'};
+  if(!V.me.a) return {ok:false,why:'죽은 사람은 말할 수 없어요'};
+  if(st.ph==='night') return {ok:false,why:'밤에는 모두 잠들어 있어요 🌙'};
+  return {ok:true,why:'메시지 입력'};
+}
+$('#composer').addEventListener('submit', e=>{
+  e.preventDefault();
+  const text=cleanText($('#chatIn').value,80); if(!text) return;
+  if(!chatMode().ok) return;
+  $('#chatIn').value='';
+  toHost({t:tab==='maf'?'mchat':'chat',text});
+});
+$('#tabs').addEventListener('click', e=>{
+  const b=e.target.closest('button[data-tab]'); if(!b) return;
+  tab=b.dataset.tab; if(tab==='maf') mafUnread=false; renderChat(true);
+});
+
+/* ================= render ================= */
+function showScreen(s){
+  $('#home').classList.toggle('hidden',s!=='home');
+  $('#room').classList.toggle('hidden',s!=='room');
+  $('#roomChip').classList.toggle('hidden',s!=='room');
+}
+function enterRoomUI(){ $('#roomChipCode').textContent=code; showScreen('room'); render(true); }
+function setTheme(ph){ document.body.classList.toggle('day',ph==='day'); document.body.classList.toggle('vote',ph==='vote'); }
+function avatar(p){ return el('div',{class:'av',style:`background:hsl(${hue(p.p)} 55% 45%)`}, (p.n||'?').slice(0,1)); }
+function nameOf(pid){ return ((V.roster||[]).find(x=>x.p===pid)||{}).n||'?'; }
+
+let mainSig='', leaveArm=0;
+function render(force){
+  if(!code){ setTheme(null); return; }
+  $('#roomChipCode').textContent=code;
+  const {st}=V;
+  const sig=JSON.stringify([code,st&&Object.assign({},st,{rem:0}),V.you,V.picks,myAct,roleShown,Date.now()-leaveArm<3000,isHost,!!lostAt]);
+  if(!force && sig===mainSig){ renderChat(); tickTimer(); return; }
+  mainSig=sig;
+  setTheme(st&&st.ph);
+  const main=$('#main'); main.textContent='';
+  if(!st){
+    main.append(el('div',{class:'card',style:'text-align:center;padding:40px'},
+      el('div',{style:'font-size:40px',text:'⏳'}),
+      el('h3',{text:isHost?'방을 여는 중…':'방에 접속하는 중…'}),
+      el('p',{class:'hint',text:isHost?'':`코드 ${code} 방을 찾고 있어요. 방장이 방을 열어 둔 상태여야 해요.`}),
+      leaveBtn()));
+    renderChat(); return;
+  }
+  if(st.ph==='lobby') renderLobby(main); else renderGame(main);
+  renderChat();
+}
+function leaveBtn(){
+  const inGame=V.st&&!['lobby','end'].includes(V.st.ph);
+  const armed=Date.now()-leaveArm<3000;
+  return el('button',{class:'ghost',text:armed?(isHost&&inGame?'정말 나갈까요? 게임이 끝나요':'한 번 더 누르면 나가기'):'나가기',
+    onclick:()=>{ if(Date.now()-leaveArm<3000){ leaveArm=0; leaveRoom(); } else { leaveArm=Date.now(); render(); setTimeout(render,3100); } }});
+}
+function renderLobby(main){
+  const {st,roster}=V; const n=roster.length;
+  const link=inviteLink();
+  const qr=el('div',{class:'qr'});
+  const copyBtn=el('button',{class:'ghost',style:'padding:6px 10px;font-size:12px',text:'초대 링크 복사',onclick:async e=>{
+    const b=e.currentTarget; try{ await navigator.clipboard.writeText(link); b.textContent='복사됨!'; }catch(_){ b.textContent='링크를 길게 눌러 복사하세요'; }
+    setTimeout(()=>b.textContent='초대 링크 복사',1800);
+  }});
+  main.append(el('div',{class:'banner'},
+    el('div',{class:'invite',style:'flex:1'},
+      qr,
+      el('div',{style:'flex:1;min-width:200px'},
+        el('h2',{text:'대기실'}),
+        el('p',{text:`QR을 찍거나 링크로 들어오세요 · ${n}/${MAX_P}명`}),
+        el('div',{class:'code-big',text:code}),
+        el('div',{class:'link-box',text:link}),
+        el('div',{style:'margin-top:8px'},copyBtn)))));
+  if(typeof QRCode!=='undefined'){ try{ new QRCode(qr,{text:link,width:116,height:116,correctLevel:QRCode.CorrectLevel.M}); }catch(e){ qr.remove(); } } else qr.remove();
+
+  const grid=el('div',{class:'players'});
+  for(const p of roster){
+    grid.append(el('div',{class:'pl'+(V.online.has(p.p)?'':' off')},
+      p.p===st.hp?el('span',{class:'crown',text:'👑'}):null,
+      avatar(p), el('div',{class:'nm',text:p.n}),
+      el('div',{class:'tags'}, p.p===myPid?el('span',{class:'tag me',text:'나'}):null)));
+  }
+  const card=el('div',{class:'card'}, el('h3',{text:'참가자'}), grid);
+  if(st.sp>0) card.append(el('p',{class:'hint',text:`정원이 가득 차 ${st.sp}명은 관전 중이에요.`}));
+  const mAuto=autoMafia(Math.max(n,MIN_P));
+  const mSel=el('select',{disabled:!isHost,onchange:e=>hostCmd('set',{k:'m',v:e.target.value})},
+    [0,1,2,3,4].map(v=>el('option',{value:v,selected:(st.set.m||0)===v,text:v?`${v}명`:`자동 (${mAuto}명)`})));
+  const dSel=el('select',{disabled:!isHost,onchange:e=>hostCmd('set',{k:'ds',v:e.target.value})},
+    [60,90,120,180,240].map(v=>el('option',{value:v,selected:(st.set.ds||120)===v,text:v%60===0?`${v/60}분`:`${v}초`})));
+  card.append(el('div',{class:'settings'},
+    el('div',{class:'field'},el('label',{text:'마피아 수'}),mSel),
+    el('div',{class:'field'},el('label',{text:'낮 토론 시간'}),dSel)));
+  const acts=el('div',{class:'actions'});
+  if(isHost) acts.append(el('button',{class:'primary',disabled:n<MIN_P,text:n<MIN_P?`${MIN_P}명 이상 필요 (현재 ${n}명)`:`게임 시작 (${n}명)`,onclick:()=>hostCmd('start')}));
+  else acts.append(el('span',{class:'hint',text:V.me?'방장이 게임을 시작하길 기다리는 중…':'정원이 가득 찼어요. 관전 중입니다.'}));
+  acts.append(el('span',{class:'spacer'}), leaveBtn());
+  card.append(acts);
+  main.append(card);
+}
+function renderGame(main){
+  const {st,roster,me,you,picks}=V;
+  const amMafia=!!(you&&you.r==='m'); const mates=amMafia?(you.m||[]):[];
+  const alive=!!(me&&me.a);
+  const icons={night:'🌙',day:'☀️',vote:'🗳️',end:st.w==='m'?'🔪':'🎉'};
+  const aliveCnt=roster.filter(x=>x.a).length;
+  let title='', sub='';
+  if(st.ph==='night'){ title=`${st.d}번째 밤`; sub=!me?'관전 중':!alive?'당신은 죽었습니다. 조용히 지켜보세요.':amMafia?'제거할 시민을 고르세요. 마피아끼리 의견이 모이면 밤이 끝나요.':'마피아가 움직이고 있습니다… 조용히 기다리세요.'; }
+  if(st.ph==='day'){ title=`${st.d}일차 낮`; sub='누가 마피아일지 토론하세요.'; }
+  if(st.ph==='vote'){ title='처형 투표'; sub=`마피아로 의심되는 사람에게 투표하세요 · ${st.nv||0}/${aliveCnt}명 투표`; }
+  if(st.ph==='end'){ title=st.w==='m'?'마피아 승리':'시민 승리'; sub='게임이 끝났습니다. 모두의 정체가 공개됐어요.'; }
+  main.append(el('div',{class:'banner'},
+    el('div',{class:'icon',text:icons[st.ph]||'🎲'}),
+    el('div',{style:'flex:1'}, el('h2',{text:title}), el('p',{text:sub})),
+    st.ph!=='end'?el('div',{style:'text-align:right'},
+      el('div',{class:'timer',id:'timer'}),
+      el('div',{class:'hint',style:'font-size:12px',text:`생존 ${aliveCnt}명 · 마피아 ${st.mc}명`})):null));
+
+  if(me && you){
+    const r=you.r;
+    const card=el('div',{class:'role'+(roleShown?' '+r:''),onclick:()=>{ roleShown=!roleShown; render(); }});
+    if(!roleShown){
+      card.append(el('div',{style:'font-size:28px',text:'🂠'}), el('div',{},el('div',{style:'font-weight:700',text:'내 직업 확인하기'}),el('div',{class:'desc',text:'탭하면 보여요. 주변 사람이 보지 않게 조심하세요.'})));
+    } else {
+      const mateNames=mates.map(nameOf);
+      card.append(el('div',{style:'font-size:34px',text:r==='m'?'🔪':'🧑‍🌾'}),
+        el('div',{style:'flex:1'},
+          el('div',{class:'big',text:r==='m'?'마피아':'시민'}),
+          el('div',{class:'desc',text:r==='m'
+            ?(mateNames.length?`동료 마피아: ${mateNames.join(', ')}. 밤마다 함께 시민을 제거하세요.`:'당신은 유일한 마피아입니다. 정체를 숨기고 시민을 제거하세요.')
+            :'마피아를 찾아 투표로 처형하세요.'})),
+        el('div',{class:'desc',text:'탭해서 숨기기'}));
+    }
+    main.append(card);
+  }
+  if(!me) main.append(el('div',{class:'notice',text:'게임이 진행 중이라 관전 중이에요. 다음 판부터 참가할 수 있어요.'}));
+
+  const grid=el('div',{class:'players'});
+  const canKill=st.ph==='night'&&amMafia&&alive, canVote=st.ph==='vote'&&alive;
+  const pickNames={}; for(const [who,t] of Object.entries(picks||{})) (pickNames[t]=pickNames[t]||[]).push(nameOf(who));
+  for(const p of roster){
+    const isMate=amMafia&&(p.p===myPid||mates.includes(p.p));
+    const killable=canKill&&p.a&&!isMate, votable=canVote&&p.a&&p.p!==myPid;
+    const sel=(killable&&myAct.k===p.p)||(votable&&myAct.v===p.p);
+    const online=V.online.has(p.p);
+    const role=st.ph==='end'&&st.ro?st.ro[p.p]:(isMate?'m':null);
+    grid.append(el('div',{class:'pl'+(p.a?'':' dead')+(killable||votable?' clickable':'')+(sel?' sel':'')+(online?'':' off'),
+      onclick:killable?()=>act({k:p.p}):votable?()=>act({v:p.p}):null},
+      p.p===st.hp?el('span',{class:'crown',text:'👑'}):null,
+      st.ph==='vote'&&st.vt&&st.vt[p.p]?el('span',{class:'badge',text:st.vt[p.p]}):null,
+      avatar(p), el('div',{class:'nm',text:p.n}),
+      el('div',{class:'tags'},
+        p.p===myPid?el('span',{class:'tag me',text:'나'}):null,
+        role==='m'?el('span',{class:'tag m',text:'마피아'}):null,
+        role==='c'?el('span',{class:'tag c',text:'시민'}):null,
+        !p.a?el('span',{class:'tag',text:'사망'}):null,
+        !online?el('span',{class:'tag',text:'연결 끊김'}):null),
+      canKill&&pickNames[p.p]?el('div',{class:'hint',style:'font-size:11px;color:var(--accent2)',text:'🔪 '+pickNames[p.p].join(', ')}):null,
+      !p.a?el('div',{class:'skull',text:'💀'}):null));
+  }
+  const box=el('div',{class:'card'},grid);
+  const acts=el('div',{class:'actions'});
+  if(st.ph==='day'&&alive){
+    const need=Math.floor(aliveCnt/2)+1;
+    acts.append(el('button',{class:myAct.r?'':'primary',disabled:!!myAct.r,text:myAct.r?`투표 준비 완료 (${st.rd}/${need})`:`투표로 넘어가기 (${st.rd}/${need})`,onclick:()=>act({r:1})}));
+  }
+  if(st.ph==='vote'&&alive){
+    acts.append(el('button',{class:myAct.v==='x'?'primary':'',text:'기권'+(st.vt&&st.vt.x?` (${st.vt.x})`:''),onclick:()=>act({v:'x'})}));
+    acts.append(el('span',{class:'hint',text:myAct.v?(myAct.v==='x'?'기권했어요. 바꿀 수 있어요.':`${nameOf(myAct.v)}님에게 투표했어요.`):'카드를 눌러 투표하세요.'}));
+  }
+  if(canKill) acts.append(el('span',{class:'hint',text:myAct.k?`${nameOf(myAct.k)}님을 지목했어요.`:'제거할 사람의 카드를 누르세요.'}));
+  if(isHost&&['night','day','vote'].includes(st.ph)) acts.append(el('button',{class:'ghost',text:'⏭ 다음 단계로',onclick:()=>hostCmd('skip')}));
+  if(st.ph==='end'){
+    if(isHost) acts.append(el('button',{class:'primary',text:'대기실로 (다시 하기)',onclick:()=>hostCmd('lobby')}));
+    else acts.append(el('span',{class:'hint',text:'방장이 다음 게임을 준비하면 대기실로 돌아가요.'}));
+  }
+  acts.append(el('span',{class:'spacer'}), leaveBtn());
+  box.append(acts);
+  if(st.ph==='end'){
+    main.append(el('div',{class:'card end-banner',style:'margin-bottom:14px'},
+      el('div',{class:'big',style:`color:${st.w==='m'?'var(--accent)':'var(--cit)'}`,text:st.w==='m'?'🔪 마피아 승리':'🎉 시민 승리'}),
+      el('p',{class:'muted',text:'마피아: '+roster.filter(x=>st.ro&&st.ro[x.p]==='m').map(x=>x.n).join(', ')})));
+  }
+  main.append(box);
+  tickTimer();
+}
+let feedLen=-1, feedTab='';
+function renderChat(force){
+  const isM=!!(V.you&&V.you.r==='m');
+  if(!isM&&tab==='maf') tab='pub';
+  const tb=$('#tabs');
+  tb.querySelector('[data-tab="maf"]').classList.toggle('hidden',!isM);
+  tb.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  $('#mafUnread').classList.toggle('hidden',!mafUnread);
+  const m=chatMode(), inp=$('#chatIn');
+  inp.disabled=!m.ok; $('#sendBtn').disabled=!m.ok; inp.placeholder=m.why||'메시지 입력';
+  const items=feed.filter(f=>tab==='maf'?f.k==='maf':f.k!=='maf');
+  if(!force&&items.length===feedLen&&feedTab===tab) return;
+  feedLen=items.length; feedTab=tab;
+  const box=$('#feed'); const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+  box.textContent='';
+  if(!items.length) box.append(el('div',{class:'msg sys',text:tab==='maf'?'마피아끼리만 보이는 대화입니다. 밤에만 말할 수 있어요.':'대화가 여기에 표시돼요.'}));
+  const dayTheme=document.body.classList.contains('day');
+  for(const f of items){
+    if(f.k==='sys') box.append(el('div',{class:'msg sys',text:cleanText(f.text,160)}));
+    else box.append(el('div',{class:'msg'+(f.k==='maf'?' maf':'')},
+      el('span',{class:'who',style:f.k==='pub'?`color:hsl(${hue(f.pid)} 60% ${dayTheme?'38%':'68%'})`:null,text:cleanText(f.name,10)+(f.pid===myPid?' (나)':'')}),
+      el('span',{text:cleanText(f.text,80)})));
+  }
+  if(atBottom||force) box.scrollTop=box.scrollHeight;
+}
+function tickTimer(){
+  const t=document.getElementById('timer'); if(!t) return;
+  if(!deadline){ t.textContent=''; return; }
+  const s=Math.max(0,Math.ceil((deadline-Date.now())/1000));
+  t.textContent=s>=60?`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`:String(s);
+  t.classList.toggle('low',s<=10);
+}
+setInterval(()=>{
+  tickTimer();
+  const gone=!isHost && code && lostAt && Date.now()-lostAt>5000;
+  $('#hostGone').classList.toggle('hidden',!gone);
+},250);
+
+/* ================= wiring ================= */
+function hashCode(){ const h=location.hash.replace('#','').toUpperCase(); return /^[A-Z]{4}$/.test(h)?h:null; }
+function updateInvite(){
+  const c=hashCode();
+  $('#inviteCard').classList.toggle('hidden',!c||!!code);
+  if(c){ $('#inviteCode').textContent=c; $('#codeIn').value=c; }
+}
+$('#createBtn').addEventListener('click',()=>{ if(!readName()) return; homeNotice(''); startHost(rid(4,'ABCDEFGHJKLMNPQRSTUVWXYZ'),false); });
+$('#joinBtn').addEventListener('click',()=>{
+  if(!readName()) return;
+  const c=cleanText($('#codeIn').value,4).toUpperCase();
+  if(!/^[A-Z]{4}$/.test(c)){ $('#codeIn').focus(); return; }
+  homeNotice(''); startClient(c);
+});
+$('#inviteJoin').addEventListener('click',()=>{ const c=hashCode(); if(c&&readName()){ homeNotice(''); startClient(c); } });
+$('#codeIn').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#joinBtn').click(); });
+$('#goneLeave').addEventListener('click',leaveRoom);
+window.addEventListener('hashchange',()=>{ if(!code) updateInvite(); });
+
+$('#nameIn').value=myName;
+updateInvite();
+if(typeof Peer==='undefined') homeNotice('네트워크 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.');
+try{
+  const saved=JSON.parse(ss.get('mafia.room')||'null');
+  if(saved && /^[A-Z]{4}$/.test(saved.code) && myName){ saved.host ? startHost(saved.code,true) : startClient(saved.code); }
+}catch(e){}
+</script>
+</body>
+</html>
