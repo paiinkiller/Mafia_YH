@@ -152,6 +152,7 @@ h3{margin:0 0 10px;font-size:16px}
     <div class="logo">🔪 마피아 <small>실시간 멀티플레이</small></div>
     <div class="spacer"></div>
     <span class="chip hidden" id="roomChip">방 <b id="roomChipCode"></b></span>
+    <span class="chip hidden" id="wakeChip" title="게임 중에는 화면이 자동으로 꺼지지 않아요">☀️ 화면 유지</span>
     <span class="chip"><span class="dot" id="connDot"></span><span id="connText">대기</span></span>
   </header>
 
@@ -377,6 +378,7 @@ function leaveRoom(){
   code=null; isHost=false; G=null; lostAt=0; everConnected=false;
   resetClient(); setConn('idle');
   if(location.hash) history.replaceState(null,'',location.pathname+location.search);
+  releaseAwake();
   showScreen('home'); updateInvite(); render();
 }
 
@@ -602,7 +604,27 @@ function showScreen(s){
   $('#room').classList.toggle('hidden',s!=='room');
   $('#roomChip').classList.toggle('hidden',s!=='room');
 }
-function enterRoomUI(){ $('#roomChipCode').textContent=code; showScreen('room'); render(true); }
+function enterRoomUI(){ $('#roomChipCode').textContent=code; showScreen('room'); render(true); keepAwake(); }
+
+/* ---- keep the screen on while in a room (Screen Wake Lock API) ---- */
+let wakeLock=null, wakeBusy=false;
+async function keepAwake(){
+  if(!code || wakeLock || wakeBusy || document.visibilityState!=='visible') return;
+  if(!('wakeLock' in navigator)) return;
+  wakeBusy=true;
+  try{
+    wakeLock=await navigator.wakeLock.request('screen');
+    $('#wakeChip').classList.remove('hidden');
+    wakeLock.addEventListener('release',()=>{ wakeLock=null; $('#wakeChip').classList.add('hidden'); });
+    if(!code) releaseAwake();
+  }catch(e){ wakeLock=null; }
+  finally{ wakeBusy=false; }
+}
+function releaseAwake(){ if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock=null; } $('#wakeChip').classList.add('hidden'); }
+// the browser drops the lock when the tab is hidden; take it again when it comes back
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') keepAwake(); });
+// some browsers only grant it after a tap
+document.addEventListener('pointerdown',()=>keepAwake(),true);
 function setTheme(ph){ document.body.classList.toggle('day',ph==='day'); document.body.classList.toggle('vote',ph==='vote'||ph==='dawn'); }
 function avatar(p){ return el('div',{class:'av',style:`background:hsl(${hue(p.p)} 55% 45%)`}, (p.n||'?').slice(0,1)); }
 function nameOf(pid){ return ((V.roster||[]).find(x=>x.p===pid)||{}).n||'?'; }
